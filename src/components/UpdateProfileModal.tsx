@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api } from "@/lib/api"; // Assumindo alias
+import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authstore";
 import Cookies from "js-cookie";
 
-// Componentes Shadcn/UI
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,10 +29,6 @@ import {
     FormMessage,
     FormDescription
 } from "@/components/ui/form";
-
-
-// --- Função para Decodificar JWT (Fallback Customizado) ---
-// Usada para obter o userId do Cookie em caso de dessincronização da store.
 function decodeJwtPayload(token: string): any | null {
     try {
         const base64Url = token.split('.')[1];
@@ -47,29 +43,29 @@ function decodeJwtPayload(token: string): any | null {
 }
 
 
-// --- Bloco 1: Schema de Validação ---
+
 const updateSchema = z.object({
-    // O nome é obrigatório
+
     name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres."),
-    // O e-mail é obrigatório e deve ser válido
+
     email: z.string().email("E-mail inválido"),
-    // Senha é opcional para a atualização
+
     password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").optional().or(z.literal('')),
 
-    // Contas bancárias
+
     agencia_conta: z.string().min(1, "A agência é obrigatória para cadastro.").optional().or(z.literal('')),
     numero_conta: z.string().min(1, "O número da conta é obrigatório.").optional().or(z.literal('')),
 });
 type UpdateFormData = z.infer<typeof updateSchema>;
 
 
-// --- Bloco 2: O Componente Modal (Conteúdo) ---
+
 interface UpdateProfileModalProps {
     children: React.ReactNode;
 }
 
 export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
-    // Leitura da store
+
     const user = useAuthStore((state) => state.user);
     const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -77,19 +73,19 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
 
-    // --- NOVO: Função para obter o userId do token ---
+
     const getUserIdFromToken = (): number | null => {
         const token = Cookies.get('token');
         if (token) {
             const decoded = decodeJwtPayload(token);
-            // Assumimos que o backend usa 'userId' como chave
+
             return decoded?.userId || null;
         }
         return null;
     };
 
 
-    // 3. Configuração do Formulário
+
     const form = useForm<UpdateFormData>({
         resolver: zodResolver(updateSchema),
         defaultValues: {
@@ -99,8 +95,6 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
             agencia_conta: user?.agencia_conta || "",
             numero_conta: user?.numero_conta || "",
         },
-        // Re-inicia os valores sempre que o modal abre (para pegar novos dados da store)
-        // Usar 'values' faz com que o formulário se sincronize com a store.
         values: {
             name: user?.name || "",
             email: user?.email || "",
@@ -110,9 +104,9 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
         }
     });
 
-    // 4. Função de Envio (PUT /user)
+
     const onSubmit = async (data: UpdateFormData) => {
-        // Obtenção do ID (usado para o path, mas agora é o ID do token para o backend)
+
         const userId = getUserIdFromToken();
         if (!userId) {
             toast.error("Usuário não identificado. Faça o login novamente.");
@@ -122,33 +116,31 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
         setIsSubmitting(true);
 
         try {
-            // 1. Constrói o payload de forma segura
+
             const initialPayload: Partial<UpdateFormData> = {};
 
-            // Adiciona name (será renomeado para 'user') e email se eles existirem
-            // Correção: Garante que 'name' e 'email' sempre vão para o payload
+
             if (data.name) initialPayload.name = data.name;
             if (data.email) initialPayload.email = data.email;
 
 
-            // Adiciona os outros campos SE eles tiverem valor
+
             if (data.agencia_conta) initialPayload.agencia_conta = data.agencia_conta;
             if (data.numero_conta) initialPayload.numero_conta = data.numero_conta;
 
-            // Adiciona a senha apenas se ela foi digitada
+
             if (data.password && data.password.length >= 6) {
                 initialPayload.password = data.password;
             } else {
-                // Se a senha estiver vazia, removemos a chave para o backend não tentar criptografar ""
+
                 delete initialPayload.password;
             }
 
-            // 2. CORREÇÃO DE NOME: Renomear 'name' para 'user' (o que o backend espera)
-            // Extrai 'name' e o renomeia para 'user' no payload final
+
             const { name, ...rest } = initialPayload;
             const payload = initialPayload;
 
-            // Se o payload for vazio (apenas 'password' e estava vazio)
+
             if (Object.keys(payload).length === 0) {
                 toast.error("Nenhum campo para atualizar foi fornecido.");
                 setIsSubmitting(false);
@@ -156,34 +148,33 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
             }
 
 
-            // 3. Envia o PUT
+
             const res = await api.put(`/user`, payload);
 
             toast.success("Perfil atualizado com sucesso!");
 
-            // 4. Lógica de reautenticação/atualização da store
-            if (payload.password) { // Se a senha foi alterada
+            if (payload.password) {
                 toast('Senha alterada! Faça o login novamente para confirmar.', { icon: '🔑' });
 
                 Cookies.remove('token', { path: '/' });
                 setAuth(null, null);
                 window.location.href = "/login";
             } else {
-                // ATENÇÃO: CORREÇÃO DA STORE
+
                 const currentToken = Cookies.get('token') || '';
 
-                // Cria o novo objeto User, mapeando 'user' (do payload) de volta para 'name'
+
                 const updatedUser = {
                     ...user,
                     ...rest,
-                    name: payload.user // Sobrescreve 'name' com o novo nome
+                    name: payload.user
                 } as any;
 
-                // Remove a chave 'user' que só existe no payload, mas não na store User interface
+
                 delete updatedUser.user;
 
                 setAuth(currentToken, updatedUser);
-                setOpen(false); // Fecha o modal
+                setOpen(false);
             }
 
         } catch (error) {
@@ -194,7 +185,7 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
         }
     };
 
-    // 5. Renderização (JSX)
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -212,7 +203,6 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
 
-                        {/* Campos do formulário... */}
                         <FormField
                             control={form.control}
                             name="name"
@@ -227,7 +217,7 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
                             )}
                         />
 
-                        {/* Campo: E-mail */}
+
                         <FormField
                             control={form.control}
                             name="email"
@@ -242,9 +232,9 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
                             )}
                         />
 
-                        {/* Contas (Agrupamento) */}
+
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Campo: Agência */}
+
                             <FormField
                                 control={form.control}
                                 name="agencia_conta"
@@ -259,7 +249,7 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
                                 )}
                             />
 
-                            {/* Campo: Conta */}
+
                             <FormField
                                 control={form.control}
                                 name="numero_conta"
@@ -275,8 +265,6 @@ export function UpdateProfileModal({ children }: UpdateProfileModalProps) {
                             />
                         </div>
 
-
-                        {/* Campo: Senha (Opcional) */}
                         <FormField
                             control={form.control}
                             name="password"

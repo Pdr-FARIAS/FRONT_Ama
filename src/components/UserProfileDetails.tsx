@@ -2,13 +2,13 @@
 
 import { useAuthStore } from "@/store/authstore";
 import Cookies from "js-cookie";
-import { useEffect, useState } from "react"; // NOVO: Para estado local
-import { api } from "@/lib/api"; // NOVO: Para chamada à API
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 
-// Componentes Shadcn/UI
+
 import { Button } from "@/components/ui/button";
-import { Copy, Eye, User, Mail, Banknote, Loader2 } from "lucide-react"; // Loader2 para carregamento
+import { Copy, Eye, User, Mail, Banknote, Loader2 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -18,7 +18,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 
-// --- Função para Decodificar JWT (Obter ID) ---
+
 function decodeJwtPayload(token: string): any | null {
     try {
         const base64Url = token.split('.')[1];
@@ -32,7 +32,7 @@ function decodeJwtPayload(token: string): any | null {
     }
 }
 
-// Componente para exibir um campo de detalhe
+
 interface DetailFieldProps {
     icon: React.ReactNode;
     label: string;
@@ -75,28 +75,28 @@ const DetailField = ({ icon, label, value, isSecret = false }: DetailFieldProps)
 };
 
 
-// Componente Principal do Modal de Detalhes
+
 export function UserProfileDetails({ children }: UserProfileDetailsProps) {
     const userStore = useAuthStore((state) => state.user);
 
-    // Estados Locais
-    const [open, setOpen] = useState(false); // Controla se o modal está aberto
+
+    const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    // Estado para guardar o dado COMPLETO puxado do backend
+
     const [fetchedUser, setFetchedUser] = useState<any>(null);
 
-    // Obtém o ID do token para a chamada GET
+
     const getUserId = () => {
         const token = Cookies.get('token');
         if (token) {
             const decoded = decodeJwtPayload(token);
-            // Assumimos que o ID está no campo 'userId' do JWT
+
             return decoded?.userId;
         }
         return null;
     };
 
-    // --- EFEITO: Puxa os dados do backend quando o modal é aberto ---
+
     useEffect(() => {
         if (open) {
             const userId = getUserId();
@@ -110,10 +110,10 @@ export function UserProfileDetails({ children }: UserProfileDetailsProps) {
             const fetchDetails = async () => {
                 setIsLoading(true);
                 try {
-                    // Rota: GET /user/:id (a que você forneceu)
+
                     const res = await api.get(`/user/${userId}`);
 
-                    // O backend retorna o objeto User direto (como no UserController.getUser)
+
                     setFetchedUser(res.data);
 
                 } catch (error) {
@@ -127,22 +127,22 @@ export function UserProfileDetails({ children }: UserProfileDetailsProps) {
 
             fetchDetails();
         } else {
-            // Limpa o estado ao fechar o modal
+
             setFetchedUser(null);
         }
-    }, [open]); // Dispara quando 'open' muda (abre ou fecha)
+    }, [open]);
 
 
-    // DECISÃO: Priorizamos os dados do backend, senão usamos a Store
+
     const currentUser = fetchedUser || userStore;
 
     // Dados do Usuário
-    const userName = currentUser?.user || currentUser?.name; // Backend: 'user', Frontend: 'name'
+    const userName = currentUser?.user || currentUser?.name;
     const userEmail = currentUser?.email;
     const userAgencia = currentUser?.agencia_conta;
     const userConta = currentUser?.numero_conta;
 
-    // Função de fechamento do modal (opcional: pode recarregar para ter certeza de que tudo está atualizado)
+
     const handleClose = () => {
         setOpen(false);
     };
@@ -171,7 +171,7 @@ export function UserProfileDetails({ children }: UserProfileDetailsProps) {
                     </div>
                 ) : (
                     <div className="space-y-4 pt-2">
-                        {/* Seção de Informações Pessoais */}
+
                         <div className="space-y-2">
                             <h3 className="text-lg font-bold text-primary">Pessoal</h3>
                             <DetailField
@@ -186,10 +186,10 @@ export function UserProfileDetails({ children }: UserProfileDetailsProps) {
                             />
                         </div>
 
-                        {/* Separador (Usando Tailwind) */}
+
                         <div className="w-full h-px bg-gray-200 my-4" />
 
-                        {/* Seção de Informações Bancárias */}
+
                         <div className="space-y-2">
                             <h3 className="text-lg font-bold text-primary">Informações Bancárias</h3>
                             <DetailField

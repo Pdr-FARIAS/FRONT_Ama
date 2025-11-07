@@ -7,11 +7,11 @@ import { z } from "zod";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns"; // Importamos 'format'
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
+import { socket } from "@/lib/socket";
 
-// Componentes Shadcn/UI
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +31,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-// --- Bloco 1: Schema de Validação (Frontend) ---
+
 const formSchema = z.object({
     titulo: z.string().min(3, "O título deve ter pelo menos 3 caracteres."),
     descriçao: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres."),
@@ -41,11 +41,11 @@ const formSchema = z.object({
     imageUrl: z.string().url("Deve ser uma URL válida (ex: http://...)").optional().or(z.literal('')),
 });
 
-// --- Bloco 2: O Componente da Página ---
+
 export default function CriarEventoPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Configuração do Formulário
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -56,26 +56,26 @@ export default function CriarEventoPage() {
         },
     });
 
-    // --- Bloco 3: Função de Envio (onSubmit) CORRIGIDA ---
+
     async function onSubmit(data: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
 
-        // 1. Formata a data para "AAAA-MM-DD"
+
         const dataFormatada = format(data.data_termino, 'yyyy-MM-dd');
 
-        // 2. CORREÇÃO: Cria o payload "PLANO" (FLAT)
-        // Removemos o "body: { ... }" que estava causando o erro de validação
+
+
         const payloadParaBackend = {
             titulo: data.titulo,
             descriçao: data.descriçao,
-            data_termino: dataFormatada, // Formato YYYY-MM-DD (string)
-            imagem: data.imageUrl || undefined, // Envia 'undefined' se for ""
+            data_termino: dataFormatada,
+            imagem: data.imageUrl || undefined,
         };
 
         try {
-            // 3. Envia o payload plano
-            await api.post("/evento", payloadParaBackend);
 
+            await api.post("/evento", payloadParaBackend);
+            socket.emit("evento:create");
             toast.success("Evento criado com sucesso!");
 
             window.location.href = "/dashboard";
@@ -83,7 +83,7 @@ export default function CriarEventoPage() {
         } catch (error: any) {
             console.error("Erro ao criar evento:", error);
 
-            // Captura erros de validação do Zod (400) do backend
+
             if (error.response && error.response.status === 400) {
                 toast.error("Dados inválidos. Verifique o formulário.");
             } else {
@@ -94,7 +94,7 @@ export default function CriarEventoPage() {
         }
     }
 
-    // 4. O Visual (JSX)
+
     return (
         <Card className="max-w-3xl mx-auto">
             <CardHeader>
@@ -107,7 +107,7 @@ export default function CriarEventoPage() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                        {/* Campo: Título */}
+
                         <FormField
                             control={form.control}
                             name="titulo"
@@ -122,7 +122,7 @@ export default function CriarEventoPage() {
                             )}
                         />
 
-                        {/* Campo: Descrição */}
+
                         <FormField
                             control={form.control}
                             name="descriçao"
@@ -141,7 +141,6 @@ export default function CriarEventoPage() {
                             )}
                         />
 
-                        {/* Campo: Data de Término */}
                         <FormField
                             control={form.control}
                             name="data_termino"
@@ -181,7 +180,6 @@ export default function CriarEventoPage() {
                             )}
                         />
 
-                        {/* Campo: URL da Imagem (Opcional) */}
                         <FormField
                             control={form.control}
                             name="imageUrl"

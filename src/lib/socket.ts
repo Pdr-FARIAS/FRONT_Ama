@@ -1,6 +1,18 @@
 import { io } from "socket.io-client";
 
-export const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000", {
-    transports: ["websocket"],
-    autoConnect: false,
+
+const URL = "http://localhost:3000";
+
+export const socket = io(URL, {
+    autoConnect: true,
+    reconnection: true,
+});
+
+
+socket.on("connect", () => {
+    console.log("Socket.io Conectado:", socket.id);
+});
+
+socket.on("disconnect", () => {
+    console.log("Socket.io Desconectado");
 });

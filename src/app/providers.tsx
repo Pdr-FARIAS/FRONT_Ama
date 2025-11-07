@@ -5,8 +5,7 @@ import { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 
 export default function Providers({ children }: { children: ReactNode }) {
-    const queryClient = new QueryClient(); // ✅ criado dentro do componente (garante compatibilidade com RSC)
-
+    const queryClient = new QueryClient();
     return (
         <QueryClientProvider client={queryClient}>
             {children}

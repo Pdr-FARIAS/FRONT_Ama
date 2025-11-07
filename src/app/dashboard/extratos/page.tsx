@@ -5,9 +5,10 @@ import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trash2 } from 'lucide-react'; // Ícone de lixeira
+import { Trash2 } from 'lucide-react';
+import { socket } from "@/lib/socket";
 
-// Componentes Shadcn/UI
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,38 +22,36 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Para confirmação
+} from "@/components/ui/alert-dialog";
 
-// Importa o componente da Tabela (DataTable) que definimos
+
 import { ExtratoDataTable } from '@/components/ExtratoDataTable';
 
-// --- Interfaces de Dados ---
 
-// A estrutura de cada linha de extrato vinda da API
+
 interface Extrato {
     extratoid: string;
     data_movimento: string;
     descricao: string;
     valorLancamento: number;
-    sinal: 'C' | 'D'; // C = Crédito, D = Débito
-    // Adicione outros campos do seu modelo 'extrato' aqui, se necessário
+    sinal: 'C' | 'D';
+
 }
 
-// --- O Componente da Página ---
 export default function ExtratosPage() {
     const [extratos, setExtratos] = useState<Extrato[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false); // Estado para o botão de deleção
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // Função para buscar os extratos
+
     const fetchExtratos = async () => {
         setIsLoading(true);
         try {
-            // Chama a rota que lista todos os extratos do usuário
+
             const response = await api.get('/extrato/extrato');
 
-            // O seu backend retorna { extratos: [...] }, como no UserController.js
+
             const rawData = response.data.extratos || [];
 
             setExtratos(rawData);
@@ -69,17 +68,13 @@ export default function ExtratosPage() {
         }
     };
 
-    // --- NOVO: Método de Deleção ---
     const handleDeleteAll = async () => {
         setIsDeleting(true);
         try {
-            // Chama a rota DELETE que deleta todos os extratos do usuário
-            // Rota: DELETE /extrato/ (baseado na sua informação)
+
             await api.delete('/extrato/');
 
             toast.success("Todos os extratos foram deletados com sucesso!");
-
-            // Recarrega a lista de extratos para mostrar a tabela vazia
             setExtratos([]);
             fetchExtratos();
 
@@ -94,15 +89,59 @@ export default function ExtratosPage() {
 
     useEffect(() => {
         fetchExtratos();
+
+
+        socket.connect();
+
+        socket.on("extrato_status", (info) => {
+            console.log("Status do extrato:", info);
+        });
+        socket.on("atualizar_grafico", (dados) => {
+            console.log("Atualizar gráfico:", dados);
+        });
+
+
+
+        socket.on("extrato:create", (novo) => {
+            setExtratos((prev) => [...prev, novo]);
+        });
+
+
+        socket.on("extrato:update", (atualizado) => {
+            setExtratos((prev) =>
+                prev.map((e) =>
+                    e.extratoid === atualizado.extratoid ? atualizado : e
+                )
+            );
+        });
+
+
+        socket.on("extrato:delete", (id) => {
+            setExtratos((prev) => prev.filter((e) => e.extratoid !== id));
+        });
+
+
+        socket.on("extrato:delete:all", () => {
+            setExtratos([]);
+        });
+
+        return () => {
+
+            socket.off("extrato:create");
+            socket.off("extrato:update");
+            socket.off("extrato:delete");
+            socket.off("extrato:delete:all");
+        };
     }, []);
 
-    // 1. Filtragem de Dados (Lógica do Frontend)
+
+
     const filteredExtratos = extratos.filter(extrato =>
         extrato.descricao.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 2. Mapeamento para o formato da tabela
-    // O componente da tabela espera uma coluna formatada chamada 'dataFormatada'
+
+
     const dataParaTabela = filteredExtratos.map(extrato => ({
         ...extrato,
         dataFormatada: format(new Date(extrato.data_movimento), 'dd/MM/yyyy', { locale: ptBR }),
@@ -114,15 +153,15 @@ export default function ExtratosPage() {
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
                 <CardTitle className="text-3xl font-bold">Histórico de Extratos</CardTitle>
 
-                {/* Container dos Botões */}
+
                 <div className="flex space-x-3 mt-2 sm:mt-0">
 
-                    {/* Botão para Novo Lançamento (Já existia) */}
+
                     <Button onClick={() => window.location.href = '/dashboard/novo-lancamento'}>
                         + Novo Lançamento
                     </Button>
 
-                    {/* NOVO: Botão de Deleção com Confirmação */}
+
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" disabled={extratos.length === 0}>
@@ -167,7 +206,7 @@ export default function ExtratosPage() {
                 {isLoading ? (
                     <div className="text-center py-10 text-gray-500">Carregando dados...</div>
                 ) : (
-                    // 3. Renderiza a tabela com os dados processados
+
                     <ExtratoDataTable data={dataParaTabela} />
                 )}
             </CardContent>

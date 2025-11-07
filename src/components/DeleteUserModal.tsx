@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authstore';
 import Cookies from 'js-cookie';
 
 
-// Componentes Shadcn/UI
+
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -23,10 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from 'lucide-react';
 
-// --- Função Auxiliar para Decodificar JWT (para obter o ID) ---
+
 function decodeJwtPayload(token: string): any | null {
     try {
-        // Usamos o decode simples que não requer imports extras e que funciona em ambiente web
+
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
@@ -37,12 +37,8 @@ function decodeJwtPayload(token: string): any | null {
         return null;
     }
 }
-
-
-// --- O Componente Modal de Exclusão ---
-
 interface DeleteUserModalProps {
-    children: React.ReactNode; // O gatilho que abre o modal (DropdownMenuItem)
+    children: React.ReactNode;
 }
 
 export function DeleteUserModal({ children }: DeleteUserModalProps) {
@@ -50,12 +46,12 @@ export function DeleteUserModal({ children }: DeleteUserModalProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const setAuth = useAuthStore((s) => s.setAuth);
 
-    // Função para obter o userId do token (fonte mais confiável)
+
     const getUserIdFromToken = (): number | null => {
         const token = Cookies.get('token');
         if (token) {
             const decoded = decodeJwtPayload(token);
-            // Assumimos que o backend usa 'userId' como chave no JWT
+
             return decoded?.userId || null;
         }
         return null;
@@ -66,7 +62,7 @@ export function DeleteUserModal({ children }: DeleteUserModalProps) {
 
         if (!userId) {
             toast.error("Sessão não encontrada. Redirecionando...");
-            // Se não há ID, tratamos como logout
+
             setAuth(null, null);
             Cookies.remove('token', { path: '/' });
             router.push("/login");
@@ -76,20 +72,18 @@ export function DeleteUserModal({ children }: DeleteUserModalProps) {
         setIsDeleting(true);
 
         try {
-            // Chama a rota DELETE /user/:id (a rota do seu backend)
-            // Nota: Se você removeu verifyUserPermission, o ID do token é suficiente.
             await api.delete(`/user/user/${userId}`);
 
             toast.success("Conta deletada com sucesso!");
 
-            // Limpa a sessão e redireciona
+
             setAuth(null, null);
             Cookies.remove('token', { path: '/' });
             window.location.href = "/login";
 
         } catch (error: any) {
             console.error("Erro ao deletar conta:", error);
-            // O backend deve retornar uma mensagem de erro (ex: 404, 500)
+
             const errorMessage = error.response?.data?.message || "Falha ao deletar conta. Tente novamente.";
             toast.error(errorMessage);
         } finally {
@@ -100,7 +94,6 @@ export function DeleteUserModal({ children }: DeleteUserModalProps) {
 
     return (
         <AlertDialog>
-            {/* O DropdownMenuItem que veio da NavBar atua como o gatilho (trigger) */}
             <AlertDialogTrigger asChild>
                 {children}
             </AlertDialogTrigger>

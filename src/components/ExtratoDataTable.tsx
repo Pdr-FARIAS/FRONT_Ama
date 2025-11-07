@@ -3,7 +3,7 @@
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 
-// Componentes Shadcn/UI para a Tabela
+
 import {
     Table,
     TableBody,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
-// Interface para os dados que o componente recebe
+
 interface ExtratoTableData {
     extratoid: string;
     dataFormatada: string;
@@ -27,17 +27,15 @@ interface DataTableProps<TData, TValue> {
     data: TData[];
 }
 
-// 1. Definição das Colunas (Contrato da Tabela)
-// TData é o tipo de dado de cada linha
 export const columns: ColumnDef<ExtratoTableData>[] = [
     {
-        // Coluna de Data com ordenação
+
         accessorKey: "dataFormatada",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
-                    // Toggle a ordenação ao clicar no cabeçalho
+
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Data
@@ -45,17 +43,16 @@ export const columns: ColumnDef<ExtratoTableData>[] = [
                 </Button>
             );
         },
-        // Renderização da célula
+
         cell: ({ row }) => <div className="pl-4">{row.original.dataFormatada}</div>,
     },
     {
-        // Coluna de Descrição (simples)
         accessorKey: "descricao",
         header: "Descrição",
         cell: ({ row }) => <div className="max-w-xs truncate">{row.original.descricao}</div>,
     },
     {
-        // Coluna de Tipo (Crédito/Débito) com ícones
+
         accessorKey: "sinal",
         header: "Tipo",
         cell: ({ row }) => {
@@ -76,15 +73,15 @@ export const columns: ColumnDef<ExtratoTableData>[] = [
         }
     },
     {
-        // Coluna de Valor (formatada como moeda)
+
         accessorKey: "valorLancamento",
         header: () => <div className="text-right">Valor</div>,
         cell: ({ row }) => {
-            // Garante que o valor é um número
+
             const valor = parseFloat(row.original.valorLancamento.toString());
             const isCredit = row.original.sinal === 'C';
 
-            // Formata para moeda BRL
+
             const formatted = valor.toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
@@ -99,13 +96,13 @@ export const columns: ColumnDef<ExtratoTableData>[] = [
     },
 ];
 
-// 2. O Componente da Tabela
+
 export function ExtratoDataTable<TData, TValue>({ data }: DataTableProps<TData, TValue>) {
-    // Hook principal para gerenciar o estado da tabela
+
     const table = useReactTable({
         data: data as ExtratoTableData[],
         columns: columns as ColumnDef<TData, TValue>[],
-        getCoreRowModel: getCoreRowModel(), // Necessário para funcionalidades básicas
+        getCoreRowModel: getCoreRowModel(),
     });
 
     return (
@@ -134,8 +131,7 @@ export function ExtratoDataTable<TData, TValue>({ data }: DataTableProps<TData, 
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
-                            // Usa o valor do sinal para colorir a linha (opcional)
-                            // data-state={row.original.sinal === 'D' ? "gasto" : ""} 
+
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}>
