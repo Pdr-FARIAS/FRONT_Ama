@@ -207,7 +207,7 @@ export default function ExtratosPage() {
                     <div className="text-center py-10 text-gray-500">Carregando dados...</div>
                 ) : (
 
-                    <ExtratoDataTable data={dataParaTabela} />
+                    <ExtratoDataTable data={dataParaTabela} onExtratoUpdated={fetchExtratos} />
                 )}
             </CardContent>
         </Card>

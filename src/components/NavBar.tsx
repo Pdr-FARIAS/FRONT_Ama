@@ -10,8 +10,6 @@ import { useRouter } from "next/navigation";
 import { UpdateProfileModal } from "./UpdateProfileModal";
 import { UserProfileDetails } from "./UserProfileDetails";
 import { DeleteUserModal } from "./DeleteUserModal";
-
-// Componentes Shadcn/UI
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -77,8 +75,12 @@ export function NavBar() {
 
 
                 <div className="flex items-center space-x-3">
+
+
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
+
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full flex items-center justify-center p-0">
                                 <Avatar className="h-10 w-10 bg-primary text-primary-foreground">
                                     <AvatarImage

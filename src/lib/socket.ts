@@ -1,3 +1,4 @@
+import { tr } from "date-fns/locale";
 import { io } from "socket.io-client";
 
 

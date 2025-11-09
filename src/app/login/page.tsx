@@ -66,7 +66,7 @@ export default function AuthPage() {
             Cookies.remove('token');
             Cookies.set('token', res.data.token, { expires: (1 / 12), path: '/' });
             toast.success("Login realizado com sucesso!");
-            await api.get("/extrato/sincronizar");
+            /* await api.get("/extrato/sincronizar");*/
             window.location.href = "/dashboard";
         } catch (error) {
             toast.error("Falha ao logar. Verifique suas credenciais.");
